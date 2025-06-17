@@ -1,0 +1,6 @@
+/target
+Cargo.lock
+*.sh
+*.csv
+*.docx
+*.pdf
