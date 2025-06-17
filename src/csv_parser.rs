@@ -18,7 +18,7 @@ pub struct CsvData {
 
 pub fn parse_csv(file_path: &str) -> Result<Vec<CsvData>> {
     let file = File::open(file_path)?;
-    let mut reader = csv::Reader::from_reader(file);
+    let mut reader = csv::ReaderBuilder::new().delimiter(b';').from_reader(file);
 
     let mut records = Vec::new();
     for result in reader.deserialize() {
