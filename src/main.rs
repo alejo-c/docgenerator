@@ -4,16 +4,16 @@ use std::path::Path;
 
 mod csv_parser;
 mod docx_processor;
-mod pdf_generator;
+mod pdf_converter;
 
 use csv_parser::parse_csv;
 use docx_processor::process_docx_template;
-use pdf_generator::generate_pdf;
+use pdf_converter::convert_to_pdf;
 
 #[derive(Parser, Debug)]
 #[command(name = "docgenerator")]
 #[command(version = "1.0")]
-#[command(about = "Processes Word templates with CSV data and converts to PDF")]
+#[command(about = "Procesa plantillas Word con datos CSV")]
 struct Args {
     #[arg(short = 't', long = "template", default_value = "template.docx")]
     template: String,
@@ -23,6 +23,13 @@ struct Args {
 
     #[arg(short = 'o', long = "output-dir", default_value = "output")]
     output_dir: String,
+
+    #[arg(
+        short = 'p',
+        long = "pdf",
+        help = "Convierte a PDF despues de generar DOCX"
+    )]
+    convert_to_pdf: bool,
 }
 
 fn main() -> Result<()> {
@@ -30,28 +37,24 @@ fn main() -> Result<()> {
 
     // Validate template exists
     if !Path::new(&args.template).exists() {
-        anyhow::bail!("Template file '{}' not found", args.template);
+        anyhow::bail!("Archivo plantilla '{}' no encontrado", args.template);
     }
 
     // Validate CSV exists
     if !Path::new(&args.csv).exists() {
-        anyhow::bail!("CSV file '{}' not found", args.csv);
+        anyhow::bail!("Archivo de datos CSV '{}' no encontrado", args.csv);
     }
 
     // Create output directory if it doesn't exist
     std::fs::create_dir_all(&args.output_dir)?;
 
-    // Create temp directory for intermediate DOCX files
-    let temp_dir = format!("{}/temp", args.output_dir);
-    std::fs::create_dir_all(&temp_dir)?;
-
     // Read data from CSV
     let csv_data = parse_csv(&args.csv)?;
-    println!("Loaded {} records from CSV", csv_data.len());
+    println!("Se cargaron {} registros del archivo CSV", csv_data.len());
 
     // Process each record
     for (index, data) in csv_data.iter().enumerate() {
-        println!("Processing record {}: {}", index + 1, data.nombre);
+        println!("Procesando registro {}: {}", index + 1, data.nombre);
 
         // Create safe filename
         let safe_name = data
@@ -63,23 +66,28 @@ fn main() -> Result<()> {
             .filter(|c| c.is_alphanumeric() || *c == '_')
             .collect::<String>();
 
-        // Create temporary DOCX with replacements
-        let temp_docx = format!("{}/temp_{}.docx", temp_dir, safe_name);
-        process_docx_template(&args.template, data, &temp_docx)?;
+        // Create DOCX with replacements
+        let output_docx = format!("{}/{}.docx", args.output_dir, safe_name);
+        process_docx_template(&args.template, data, &output_docx)?;
 
-        // Generate PDF from processed DOCX
-        let output_pdf = format!("{}/certificado_{}.pdf", args.output_dir, safe_name);
-        generate_pdf(&temp_docx, &output_pdf, data)?;
-
-        // Clean up temporary file
-        let _ = std::fs::remove_file(&temp_docx);
-
-        println!("Created: {}", output_pdf);
+        println!("Se ha creado: {}", output_docx);
     }
 
-    // Clean up temp directory
-    let _ = std::fs::remove_dir(&temp_dir);
+    println!(
+        "\n{} Documentos procesados satisfactoriamente",
+        csv_data.len()
+    );
 
-    println!("\nSuccessfully processed {} certificates", csv_data.len());
+    // Convert to PDF if requested
+    if args.convert_to_pdf {
+        println!("\nConvirtiendo a PDF...");
+        match convert_to_pdf(&args.output_dir) {
+            Ok(_) => println!("Conversión a PDF completada"),
+            Err(e) => eprintln!("Error al convertir a PDF: {}", e),
+        }
+    } else {
+        println!("Para convertir a PDF, ejecuta el programa con la opción --pdf");
+    }
+
     Ok(())
 }
