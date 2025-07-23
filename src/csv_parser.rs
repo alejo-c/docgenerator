@@ -4,16 +4,28 @@ use std::fs::File;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct CsvData {
+    #[serde(rename = "Código")]
+    pub code: String,
+    #[serde(rename = "Formación")]
+    pub formation: String,
     #[serde(rename = "Nombre")]
-    pub nombre: String,
+    pub name: String,
+    #[serde(rename = "Titulos")]
+    pub degrees: String,
+    #[serde(rename = "Rol")]
+    pub role: String,
     #[serde(rename = "Revista")]
-    pub revista: String,
+    pub journal: String,
     #[serde(rename = "Institución")]
-    pub institucion: String,
-    #[serde(rename = "Ciudad")]
-    pub ciudad: String,
-    #[serde(rename = "Correo")]
-    pub correo: String,
+    pub institution: String,
+    #[serde(rename = "Ubicación")]
+    pub location: String,
+    #[serde(rename = "Respetado")]
+    pub respected: String,
+    #[serde(rename = "Invitarlo")]
+    pub invite: String,
+    // #[serde(rename = "Dirección de correo")]
+    // pub email: String,
 }
 
 pub fn parse_csv(file_path: &str) -> Result<Vec<CsvData>> {

@@ -12,14 +12,14 @@ use pdf_converter::convert_to_pdf;
 
 #[derive(Parser, Debug)]
 #[command(name = "docgenerator")]
-#[command(version = "1.0")]
+#[command(version = "2.0")]
 #[command(about = "Procesa plantillas Word con datos CSV")]
 struct Args {
     #[arg(short = 't', long = "template", default_value = "template.docx")]
     template: String,
 
-    #[arg(short = 'c', long = "csv", default_value = "data.csv")]
-    csv: String,
+    #[arg(short = 'd', long = "data", default_value = "data.csv")]
+    data: String,
 
     #[arg(short = 'o', long = "output-dir", default_value = "output")]
     output_dir: String,
@@ -35,38 +35,29 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    // Validate template exists
     if !Path::new(&args.template).exists() {
         anyhow::bail!("Archivo plantilla '{}' no encontrado", args.template);
     }
 
-    // Validate CSV exists
-    if !Path::new(&args.csv).exists() {
-        anyhow::bail!("Archivo de datos CSV '{}' no encontrado", args.csv);
+    if !Path::new(&args.data).exists() {
+        anyhow::bail!("Archivo de datos CSV '{}' no encontrado", args.data);
     }
 
-    // Create output directory if it doesn't exist
     std::fs::create_dir_all(&args.output_dir)?;
 
-    // Read data from CSV
-    let csv_data = parse_csv(&args.csv)?;
+    let csv_data = parse_csv(&args.data)?;
     println!("Se cargaron {} registros del archivo CSV", csv_data.len());
 
-    // Process each record
     for (index, data) in csv_data.iter().enumerate() {
-        println!("Procesando registro {}: {}", index + 1, data.nombre);
+        println!("Procesando registro {}: {}", index + 1, data.name);
 
-        // Create safe filename
-        let safe_name = data
-            .nombre
-            .replace(" ", "_")
-            .replace(",", "")
-            .replace(".", "")
-            .chars()
-            .filter(|c| c.is_alphanumeric() || *c == '_')
-            .collect::<String>();
+        let safe_name = data.name.replace(" ", "_");
+        // .replace(",", "")
+        // .replace(".", "")
+        // .chars()
+        // .filter(|c| c.is_alphanumeric() || *c == '_')
+        // .collect::<String>();
 
-        // Create DOCX with replacements
         let output_docx = format!("{}/{}.docx", args.output_dir, safe_name);
         process_docx_template(&args.template, data, &output_docx)?;
 
@@ -78,7 +69,6 @@ fn main() -> Result<()> {
         csv_data.len()
     );
 
-    // Convert to PDF if requested
     if args.convert_to_pdf {
         println!("\nConvirtiendo a PDF...");
         match convert_to_pdf(&args.output_dir) {

@@ -7,16 +7,13 @@ use zip::write::FileOptions;
 use zip::{ZipArchive, ZipWriter};
 
 pub fn process_docx_template(template_path: &str, data: &CsvData, output_path: &str) -> Result<()> {
-    // Read template DOCX
     let template_data = fs::read(template_path)?;
     let reader = Cursor::new(&template_data);
     let mut zip = ZipArchive::new(reader)?;
 
-    // Create output ZIP
     let output_file = fs::File::create(output_path)?;
     let mut output_zip = ZipWriter::new(output_file);
 
-    // Process each file in the ZIP
     for i in 0..zip.len() {
         let mut file = zip.by_index(i)?;
         let name = file.name().to_string();
@@ -51,19 +48,21 @@ pub fn process_docx_template(template_path: &str, data: &CsvData, output_path: &
 fn apply_replacements(content: &str, data: &CsvData) -> String {
     let mut result = content.to_string();
 
-    // Create replacements map
     let replacements = HashMap::from([
-        ("{NOMBRE}", data.nombre.as_str()),
-        ("{REVISTA}", data.revista.as_str()),
-        ("{INSTITUCION}", data.institucion.as_str()),
-        ("{CIUDAD}", data.ciudad.as_str()),
-        ("{CORREO}", data.correo.as_str()),
+        ("{CODIGO}", data.code.clone()),
+        ("{FORMACION}", data.formation.clone()),
+        ("{NOMBRE}", data.name.clone()),
+        ("{TITULOS}", data.degrees.clone()),
+        ("{ROL}", data.role.clone()),
+        ("{REVISTA}", data.journal.clone()),
+        ("{INSTITUCION}", data.institution.clone()),
+        ("{UBICACION}", data.location.clone()),
+        ("{RESPETADO}", data.respected.clone()),
+        ("{INVITARLO}", data.invite.clone()),
     ]);
 
-    // Apply replacements
     for (placeholder, value) in replacements {
-        result = result.replace(placeholder, value);
+        result = result.replace(placeholder, value.as_str());
     }
-
     result
 }

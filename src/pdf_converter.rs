@@ -115,16 +115,19 @@ pub fn convert_to_pdf(docx_dir: &str) -> Result<()> {
 
     #[cfg(target_os = "windows")]
     {
-        convert_to_pdf_windows(docx_dir)
+        convert_to_pdf_windows(docx_dir)?;
     }
 
     #[cfg(target_os = "linux")]
     {
-        convert_to_pdf_linux(docx_dir)
+        convert_to_pdf_linux(docx_dir)?;
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         anyhow::bail!("Conversión a PDF no soportada en este sistema operativo")
     }
+
+    std::fs::remove_file(&docx_dir)?;
+    Ok(())
 }
